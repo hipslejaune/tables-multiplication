@@ -47,6 +47,16 @@ body {
   padding-inline: 1rem;
   padding-block: 1.5rem 3rem;
 }
+/* Fond d'écran : l'image reste visible en entier, les côtés sont remplis par une version floue et sombre */
+body::before {
+  content: ""; position: fixed; inset: -40px; z-index: -1;
+  background: url("fond.jpg") center / cover no-repeat;
+  filter: blur(28px) brightness(.5);
+}
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: -1;
+  background: linear-gradient(rgba(20, 16, 43, .6), rgba(20, 16, 43, .76)), url("fond.jpg") center / contain no-repeat;
+}
 main { max-width: 40rem; margin-inline: auto; display: flex; flex-direction: column; gap: 2rem; }
 h1, h2 { font-family: var(--font-display); font-weight: 400; letter-spacing: .01em; text-wrap: balance; margin: 0; }
 h1 { font-size: clamp(2.2rem, 9vw, 3.2rem); line-height: 1.05; }
@@ -175,9 +185,40 @@ td.t { font-weight: 800; color: var(--gold); }
 .link-btn { background: none; border: 0; color: var(--muted); text-decoration: underline; padding: .4rem 0; }
 .link-btn.danger { color: var(--bad); }
 
+/* Golden Honmoon : halo doré affiché à chaque bonne réponse */
+.honmoon { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; pointer-events: none; opacity: 0; }
+.honmoon.on { animation: honmoon-flash 1s ease-out both; }
+.golden-honmoon {
+  position: relative; width: min(250px, 62vw); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 230, 120, 0.3) 0%, rgba(255, 180, 0, 0.1) 70%, transparent 100%);
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.8), inset 0 0 25px rgba(255, 215, 0, 0.6);
+  border: 3px solid rgba(255, 223, 0, 0.9);
+  animation: pulse-honmoon 1s infinite ease-in-out;
+}
+.golden-honmoon::before {
+  content: ""; position: absolute; inset: -10px; border-radius: 50%;
+  border: 2px dashed rgba(255, 240, 150, 0.7);
+  animation: rotate-honmoon 6s linear infinite;
+}
+@keyframes honmoon-flash {
+  0% { opacity: 0; transform: scale(.7); }
+  20% { opacity: 1; transform: scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.15); }
+}
+@keyframes honmoon-fade { 0% { opacity: 0; } 20% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes pulse-honmoon {
+  0% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 215, 0, 0.7), inset 0 0 20px rgba(255, 215, 0, 0.5); }
+  50% { transform: scale(1.05); box-shadow: 0 0 45px rgba(255, 235, 100, 1), inset 0 0 35px rgba(255, 235, 100, 0.8); }
+  100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 215, 0, 0.7), inset 0 0 20px rgba(255, 215, 0, 0.5); }
+}
+@keyframes rotate-honmoon { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
 @media (prefers-reduced-motion: reduce) {
   .pop { animation: none; }
   .segs span { transition: none; }
+  .honmoon.on { animation: honmoon-fade 1s ease-out both; }
+  .golden-honmoon, .golden-honmoon::before { animation: none; }
 }
 </style>
 
@@ -257,6 +298,7 @@ td.t { font-weight: 800; color: var(--gold); }
     <div class="foot-actions"><button class="link-btn" id="clearBtn" type="button" hidden>Effacer l'historique</button></div>
   </section>
 </main>
+<div class="honmoon" id="honmoon" aria-hidden="true"><div class="golden-honmoon"></div></div>
 
 <script>
 (function () {
@@ -402,7 +444,7 @@ td.t { font-weight: 800; color: var(--gold); }
       missed = missed.filter(function (m) { return !(m.t === q.t && m.f === q.f); });
       els.answer.className = "ok"; els.fb.className = "fb good";
       els.fb.textContent = ["Bravo !", "Exact !", "Super !", "Bien joué !", "Parfait !"][rnd(5)];
-      renderSegs(); save();
+      renderSegs(); save(); showHonmoon();
       var badge = null;
       for (var i = 0; i < BADGES.length; i++) if (BADGES[i].at === store.total) badge = BADGES[i];
       if (correct >= TARGET) { stopTimer(); finishRound(badge); }
@@ -416,6 +458,13 @@ td.t { font-weight: 800; color: var(--gold); }
       els.fb.textContent = "Presque ! La réponse était " + q.answer + ".";
       nextAfter(1900);
     }
+  }
+  var honmoon = $("honmoon"), honTimer = null;
+  function showHonmoon() {
+    if (!honmoon) return;
+    honmoon.classList.remove("on"); void honmoon.offsetWidth; honmoon.classList.add("on");
+    clearTimeout(honTimer);
+    honTimer = setTimeout(function () { honmoon.classList.remove("on"); }, 1000);
   }
   function finishRound(badge) {
     state = "done";
