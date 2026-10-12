@@ -156,6 +156,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--aqua); outl
 .badge-ic img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; display: block; }
 .badge-ic .q { font-family: var(--font-display); font-size: 2.4rem; line-height: 1; }
 .badge-ic.big { width: 9rem; }
+.badge-ic.sticker img { object-fit: contain; object-position: center; padding: .3rem; }
 .badge-ic.photo { border-radius: 1rem; border-width: 2px; background: var(--surface-2); }
 .badge-ic.photo.big { width: min(15rem, 100%); max-height: 12rem; aspect-ratio: auto; }
 .badge-ic.photo.big img { width: 100%; height: auto; max-height: 12rem; object-fit: contain; }
@@ -325,11 +326,11 @@ td.t { font-weight: 800; color: var(--gold); }
     { at: 30, name: "Affiche néon", icon: "heart" },
     { at: 40, name: "Sur scène", icon: "star" },
     { at: 50, name: "Chapeau noir", icon: "mic" },
-    { at: 60, name: "Éclair", icon: "bolt" },
-    { at: 70, name: "Bouclier d'ombre", icon: "shield" },
-    { at: 80, name: "Couronne", icon: "crown" },
-    { at: 90, name: "Flamme sacrée", icon: "flame" },
-    { at: 100, name: "Diamant", icon: "diamond" }
+    { at: 60, name: "Disco Huntrix", icon: "bolt" },
+    { at: 70, name: "Rumi, Mira et Zoey", icon: "shield" },
+    { at: 80, name: "Tenue dorée", icon: "crown" },
+    { at: 90, name: "Huntrix et le chat", icon: "flame" },
+    { at: 100, name: "Demon Hunters", icon: "diamond" }
   ];
   /* Images des récompenses (dossier Drive). Un palier sans image garde son icône. */
   var BADGE_IMAGES = {
@@ -337,7 +338,12 @@ td.t { font-weight: 800; color: var(--gold); }
     20: "img/trio.jpg",
     30: "img/affiche.jpg",
     40: "img/scene.jpg",
-    50: "img/chapeau.jpg"
+    50: "img/chapeau.jpg",
+    60: "img/disco.png",
+    70: "img/gobelets.png",
+    80: "img/doree.png",
+    90: "img/huntrix-chat.png",
+    100: "img/logo.png"
   };
 
   var KEY = "tables-multiplications-v1";
@@ -502,6 +508,7 @@ td.t { font-weight: 800; color: var(--gold); }
     var idx = BADGES.indexOf(b);
     host.style.setProperty("--c", "var(" + COLORS[idx % COLORS.length] + ")");
     host.classList.toggle("photo", !!BADGE_IMAGES[b.at]);
+    host.classList.toggle("sticker", /\.png$/.test(BADGE_IMAGES[b.at] || ""));
     if (BADGE_IMAGES[b.at]) { var im = document.createElement("img"); im.src = BADGE_IMAGES[b.at]; im.alt = b.name; host.appendChild(im); return; }
     var ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg"), p = document.createElementNS(ns, "path");
     svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
