@@ -127,6 +127,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--aqua); outl
 .fb.good { color: var(--good); }
 .fb.bad { color: var(--bad); }
 
+.play-foot { display: flex; justify-content: center; margin-top: auto; }
+.play-foot .link-btn { color: var(--muted); }
+
 /* Résultat de fin de partie */
 .result-time { font-family: var(--font-display); font-size: clamp(2.6rem, 13vw, 4rem); line-height: 1; font-variant-numeric: tabular-nums; color: var(--gold); }
 .record { display: inline-block; background: var(--gold); color: var(--ink); font-weight: 800; border-radius: 999px; padding: .15rem .8rem; font-size: .9rem; }
@@ -268,6 +271,8 @@ td.t { font-weight: 800; color: var(--gold); }
       <button class="big-btn" id="againBtn" type="button">Rejouer</button>
     </div>
 
+    <div class="play-foot" id="musicFoot"><button class="link-btn" id="musicBtn" type="button" aria-pressed="true">♪ Musique : activée</button></div>
+
     <div class="cover" id="pauseCover" hidden>
       <h2>Pause</h2>
       <p class="rule">Le chrono est arrêté. La question est cachée jusqu'à la reprise.</p>
@@ -300,6 +305,7 @@ td.t { font-weight: 800; color: var(--gold); }
     <div class="foot-actions"><button class="link-btn" id="clearBtn" type="button" hidden>Effacer l'historique</button></div>
   </section>
 </main>
+<audio id="music" src="audio/musique.mp3" loop preload="none"></audio>
 <div class="honmoon" id="honmoon" aria-hidden="true"><div class="golden-honmoon"></div></div>
 
 <script>
@@ -377,7 +383,7 @@ td.t { font-weight: 800; color: var(--gold); }
   };
 
   var KEY = "tables-multiplications-v1";
-  function defaults() { return { total: 0, history: [], tables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }; }
+  function defaults() { return { total: 0, history: [], tables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], music: true }; }
   var store = load();
   function load() {
     try {
@@ -387,6 +393,7 @@ td.t { font-weight: 800; color: var(--gold); }
         if (typeof o.total === "number") d.total = o.total;
         if (Array.isArray(o.history)) d.history = o.history;
         if (Array.isArray(o.tables) && o.tables.length) d.tables = o.tables;
+        if (typeof o.music === "boolean") d.music = o.music;
         return d;
       }
     } catch (e) {}
@@ -403,8 +410,21 @@ td.t { font-weight: 800; color: var(--gold); }
     rTime: $("rTime"), rRecord: $("rRecord"), rLines: $("rLines"),
     pauseCover: $("pauseCover"), resumeBtn: $("resumeBtn"),
     reward: $("reward"), rewardIc: $("rewardIc"), rewardName: $("rewardName"), rewardText: $("rewardText"), rewardBtn: $("rewardBtn"),
-    gallery: $("gallery"), badgeHint: $("badgeHint"), histBox: $("histBox"), clearBtn: $("clearBtn")
+    gallery: $("gallery"), badgeHint: $("badgeHint"), histBox: $("histBox"), clearBtn: $("clearBtn"), musicBtn: $("musicBtn"), music: $("music")
   };
+
+  /* Musique : démarre après un clic (obligatoire pour les navigateurs), en boucle, volume doux */
+  els.music.volume = 0.35;
+  function syncMusic() {
+    var on = store.music && !document.hidden && (state === "playing" || state === "reward" || state === "done");
+    if (on) { var pr = els.music.play(); if (pr && pr.catch) pr.catch(function (e) { if (e && e.name === "NotSupportedError") $("musicFoot").hidden = true; }); }
+    else { els.music.pause(); }
+  }
+  function renderMusicBtn() {
+    els.musicBtn.textContent = "\u266a Musique : " + (store.music ? "activée" : "coupée");
+    els.musicBtn.setAttribute("aria-pressed", String(store.music));
+  }
+  els.musicBtn.addEventListener("click", function () { store.music = !store.music; save(); renderMusicBtn(); syncMusic(); });
 
   /* Chrono */
   var elapsed = 0, segStart = 0, running = false;
@@ -466,7 +486,7 @@ td.t { font-weight: 800; color: var(--gold); }
     correct = 0; errors = 0; missed = []; last = null; elapsed = 0; running = false;
     els.pauseCover.hidden = true; els.reward.hidden = true;
     state = "playing"; setChipsDisabled(true); renderSegs(); show("q");
-    startTimer(); showQuestion();
+    startTimer(); showQuestion(); syncMusic();
   }
   function nextAfter(ms) { busy = true; wait = setTimeout(function () { if (state === "playing") showQuestion(); }, ms); }
   function onSubmit(e) {
@@ -526,11 +546,11 @@ td.t { font-weight: 800; color: var(--gold); }
   /* Pause et récompense */
   function pause() {
     if (state !== "playing") return;
-    stopTimer(); state = "paused"; els.pauseCover.hidden = false; els.resumeBtn.focus();
+    stopTimer(); state = "paused"; els.pauseCover.hidden = false; els.resumeBtn.focus(); syncMusic();
   }
   function resume() {
     if (state !== "paused") return;
-    els.pauseCover.hidden = true; state = "playing"; startTimer();
+    els.pauseCover.hidden = true; state = "playing"; startTimer(); syncMusic();
     if (!busy) els.answer.focus();
   }
   function badgeVisual(b, host) {
@@ -663,9 +683,9 @@ td.t { font-weight: 800; color: var(--gold); }
   els.pauseBtn.addEventListener("click", pause);
   els.resumeBtn.addEventListener("click", resume);
   els.rewardBtn.addEventListener("click", closeReward);
-  document.addEventListener("visibilitychange", function () { if (document.hidden) pause(); });
+  document.addEventListener("visibilitychange", function () { if (document.hidden) pause(); syncMusic(); });
 
-  renderChips(); renderSegs(); renderBadges(); renderHistory(); show("start");
+  renderChips(); renderSegs(); renderBadges(); renderHistory(); renderMusicBtn(); show("start");
 })();
 </script>
 </body>
